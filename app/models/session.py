@@ -44,5 +44,5 @@ class Session(Base):
     character_id = Column(String(32), ForeignKey("characters.id"), nullable=False)
     user_id = Column(String(64), nullable=False, default="anonymous")
     status = Column(String(16), default="active")
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)

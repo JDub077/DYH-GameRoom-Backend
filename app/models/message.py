@@ -14,4 +14,4 @@ class Message(Base):
     content = Column(Text, nullable=False)
     emotion_tag = Column(String(32))
     extra = Column(JSON, default=dict)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now)

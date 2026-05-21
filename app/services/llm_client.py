@@ -54,7 +54,5 @@ async def chat_completion(
 
     except httpx.TimeoutException:
         return "（角色望着河水，一时陷入沉思……）"
-    except Exception as e:
-        # 生产环境应打日志
-        print(f"[LLM Error] {e}")
+    except Exception:
         return "（角色望着河水，一时陷入沉思……）"

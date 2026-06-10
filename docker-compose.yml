@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   nginx:
-    image: nginx:alpine
+    image: docker.m.daocloud.io/library/nginx:alpine
     container_name: dyh-nginx
     restart: unless-stopped
     ports:
@@ -30,7 +30,7 @@ services:
       - dyh-network
 
   postgres:
-    image: postgres:15-alpine
+    image: docker.m.daocloud.io/library/postgres:15-alpine
     container_name: dyh-postgres
     restart: unless-stopped
     environment:
@@ -43,7 +43,7 @@ services:
       - dyh-network
 
   redis:
-    image: redis:7-alpine
+    image: docker.m.daocloud.io/library/redis:7-alpine
     container_name: dyh-redis
     restart: unless-stopped
     volumes:

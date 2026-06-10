@@ -1,0 +1,63 @@
+version: "3.8"
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: dyh-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ~/dyh/frontend-dist:/usr/share/nginx/html:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+    depends_on:
+      - backend
+    networks:
+      - dyh-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: dyh-backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - dyh-network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: dyh-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: dyh
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dyh_password_change_me}
+      POSTGRES_DB: dyh_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - dyh-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: dyh-redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    networks:
+      - dyh-network
+
+networks:
+  dyh-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:

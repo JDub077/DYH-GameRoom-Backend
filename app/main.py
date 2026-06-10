@@ -6,8 +6,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.database import engine, Base, SessionLocal
-from app.routers import characters, sessions, chat
-from app.models.character import Character
+from app.routers import characters, sessions, chat, rooms, ws
+from app.models import Character, Room, RoomPlayer, Clue, RoomMessage
 
 
 @asynccontextmanager
@@ -74,6 +74,8 @@ app.add_middleware(
 app.include_router(characters.router, prefix="/api/v1")
 app.include_router(sessions.router, prefix="/api/v1")
 app.include_router(chat.router, prefix="/api/v1")
+app.include_router(rooms.router, prefix="/api/v1")
+app.include_router(ws.router, prefix="/api/v1")
 
 
 @app.get("/health")

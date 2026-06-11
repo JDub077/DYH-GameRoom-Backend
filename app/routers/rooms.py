@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.core.database import get_db
 from app.models.room import Room, RoomPlayer, Clue, RoomMessage
 from app.models.character import Character
+from app.services.room_manager import room_manager
 from app.schemas.room import (
     RoomCreate,
     RoomOut,
@@ -362,7 +363,27 @@ def start_game(room_id: str, user_id: str, db: Session = Depends(get_db)):
     db.add(sys_msg)
     db.commit()
 
-    return _room_to_out(room, db)
+    # Broadcast role assignment to all connected players
+    room_out = _room_to_out(room, db)
+    import asyncio
+    asyncio.create_task(room_manager.broadcast(room_id, {
+        "event": "roles_assigned",
+        "payload": {
+            "players": room_out.players,
+            "phase": room.current_phase,
+            "system_message": {
+                "id": str(sys_msg.id),
+                "sender_id": sys_msg.sender_id,
+                "sender_nickname": sys_msg.sender_nickname,
+                "content": sys_msg.content,
+                "message_type": sys_msg.message_type,
+                "created_at": sys_msg.created_at.isoformat() if sys_msg.created_at else None,
+            },
+        },
+        "timestamp": int(datetime.now().timestamp()),
+    }))
+
+    return room_out
 
 
 @router.get("/rooms/{room_id}/my-role", response_model=MyRoleOut)

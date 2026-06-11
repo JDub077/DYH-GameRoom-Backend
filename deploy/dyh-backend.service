@@ -1,0 +1,15 @@
+[Unit]
+Description=DYH Backend
+After=network.target postgresql.service redis-server.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/dyh/backend
+EnvironmentFile=/root/dyh/backend/.env
+ExecStart=/root/dyh/backend/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

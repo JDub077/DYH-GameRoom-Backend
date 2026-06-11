@@ -18,11 +18,9 @@ jobs:
             set -e
             echo "=== Deploying Backend ==="
 
-            # Ensure deployment directory exists
-            mkdir -p ~/dyh/backend
-
             # Clone or pull backend repo
             if [ ! -d ~/dyh/backend/.git ]; then
+              mkdir -p ~/dyh
               git clone ${{ github.server_url }}/${{ github.repository }}.git ~/dyh/backend
             fi
 
@@ -35,12 +33,16 @@ jobs:
               echo "${{ secrets.BACKEND_ENV }}" > .env
             fi
 
-            # Return to compose root and rebuild backend
-            cd ~/dyh
-            docker-compose pull
-            docker-compose up -d --build backend
+            # Ensure virtual environment exists
+            if [ ! -d .venv ]; then
+              python3 -m venv .venv
+            fi
+            source .venv/bin/activate
 
-            # Cleanup
-            docker system prune -f
+            # Install dependencies
+            pip install -r requirements.txt
+
+            # Restart backend service
+            systemctl restart dyh-backend
 
             echo "=== Backend Deployed ==="

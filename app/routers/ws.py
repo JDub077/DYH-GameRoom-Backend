@@ -62,6 +62,8 @@ async def _build_room_state(room_id: str, db: Session):
             "id": str(m.id),
             "sender_id": m.sender_id,
             "sender_nickname": m.sender_nickname,
+            "sender_character_name": m.sender_character_name,
+            "sender_avatar_url": m.sender_avatar_url,
             "content": m.content,
             "message_type": m.message_type,
             "created_at": m.created_at.isoformat() if m.created_at else None,
@@ -166,10 +168,22 @@ async def room_websocket(websocket: WebSocket, room_id: str, db: Session = Depen
                 content = payload.get("content", "").strip()
                 if not content:
                     continue
+
+                # Lookup sender character info
+                char_name = None
+                avatar_url = None
+                if player.character_id:
+                    char = db.query(Character).filter(Character.id == player.character_id).first()
+                    if char:
+                        char_name = char.name
+                        avatar_url = char.avatar_url
+
                 msg = RoomMessage(
                     room_id=room_id,
                     sender_id=user_id,
                     sender_nickname=player.nickname,
+                    sender_character_name=char_name,
+                    sender_avatar_url=avatar_url,
                     content=content,
                     message_type="text",
                 )
@@ -184,6 +198,8 @@ async def room_websocket(websocket: WebSocket, room_id: str, db: Session = Depen
                             "id": str(msg.id),
                             "sender_id": msg.sender_id,
                             "sender_nickname": msg.sender_nickname,
+                            "sender_character_name": msg.sender_character_name,
+                            "sender_avatar_url": msg.sender_avatar_url,
                             "content": msg.content,
                             "message_type": msg.message_type,
                             "created_at": msg.created_at.isoformat() if msg.created_at else None,
@@ -224,6 +240,7 @@ async def room_websocket(websocket: WebSocket, room_id: str, db: Session = Depen
                     # System message for phase change
                     phase_labels = {
                         "waiting": "等待中",
+                        "role_reveal": "角色揭晓",
                         "opening": "游戏开始",
                         "search_1": "第一轮搜证",
                         "discuss_1": "第一轮讨论",

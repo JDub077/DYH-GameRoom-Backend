@@ -12,6 +12,7 @@ class Character(Base):
     avatar_url = Column(Text)
     tagline = Column(Text)
     tags = Column(JSON, default=list)
+    backstory = Column(Text, nullable=True)
     system_prompt = Column(Text, nullable=False)
     few_shots = Column(JSON, default=list)
     knowledge_nodes = Column(JSON, default=list)

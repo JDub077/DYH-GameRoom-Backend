@@ -18,6 +18,7 @@ from app.schemas.room import (
     PhaseUpdate,
     RoleAssign,
     RoomMessageOut,
+    MyRoleOut,
 )
 
 router = APIRouter()
@@ -295,6 +296,8 @@ def get_messages(room_id: str, limit: int = 100, db: Session = Depends(get_db)):
             id=str(m.id),
             sender_id=m.sender_id,
             sender_nickname=m.sender_nickname,
+            sender_character_name=m.sender_character_name,
+            sender_avatar_url=m.sender_avatar_url,
             content=m.content,
             message_type=m.message_type,
             created_at=m.created_at,
@@ -315,3 +318,75 @@ def player_ready(room_id: str, user_id: str, db: Session = Depends(get_db)):
     db.commit()
     room = db.query(Room).filter(Room.id == room_id).first()
     return _room_to_out(room, db)
+
+
+@router.post("/rooms/{room_id}/start-game", response_model=RoomOut)
+def start_game(room_id: str, user_id: str, db: Session = Depends(get_db)):
+    room = db.query(Room).filter(Room.id == room_id).first()
+    if not room:
+        raise HTTPException(status_code=404, detail="房间不存在")
+    if room.host_id != user_id:
+        raise HTTPException(status_code=403, detail="只有主持人可以开始游戏")
+
+    players = db.query(RoomPlayer).filter(RoomPlayer.room_id == room_id).all()
+    non_host_players = [p for p in players if not p.is_host]
+
+    if not non_host_players:
+        raise HTTPException(status_code=400, detail="房间内没有其他玩家")
+
+    characters = db.query(Character).filter(Character.status == "active").all()
+    if len(characters) < len(non_host_players):
+        raise HTTPException(status_code=400, detail=f"可用角色不足，需要 {len(non_host_players)} 个，当前只有 {len(characters)} 个")
+
+    # Randomly assign characters
+    assigned_chars = random.sample(characters, len(non_host_players))
+    for player, char in zip(non_host_players, assigned_chars):
+        player.character_id = char.id
+        player.is_ready = False  # Reset ready for role reveal
+    db.commit()
+
+    # Update room phase
+    room.current_phase = "role_reveal"
+    room.status = "playing"
+    db.commit()
+    db.refresh(room)
+
+    # System message
+    sys_msg = RoomMessage(
+        room_id=room_id,
+        sender_id="system",
+        sender_nickname="系统",
+        content="游戏开始！请各位玩家查看自己的角色剧本。",
+        message_type="system",
+    )
+    db.add(sys_msg)
+    db.commit()
+
+    return _room_to_out(room, db)
+
+
+@router.get("/rooms/{room_id}/my-role", response_model=MyRoleOut)
+def get_my_role(room_id: str, user_id: str, db: Session = Depends(get_db)):
+    player = db.query(RoomPlayer).filter(
+        RoomPlayer.room_id == room_id,
+        RoomPlayer.user_id == user_id,
+    ).first()
+    if not player:
+        raise HTTPException(status_code=404, detail="玩家不在房间中")
+    if not player.character_id:
+        raise HTTPException(status_code=400, detail="你还没有被分配角色")
+
+    char = db.query(Character).filter(Character.id == player.character_id).first()
+    if not char:
+        raise HTTPException(status_code=404, detail="角色不存在")
+
+    return MyRoleOut(
+        character_id=char.id,
+        character_name=char.name,
+        title=char.title,
+        era=char.era,
+        avatar_url=char.avatar_url,
+        tagline=char.tagline,
+        backstory=char.backstory,
+        secrets=char.secrets,
+    )

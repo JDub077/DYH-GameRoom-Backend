@@ -76,10 +76,26 @@ class RoleAssign(BaseModel):
     character_id: str
 
 
+class MyRoleOut(BaseModel):
+    character_id: str
+    character_name: str
+    title: Optional[str] = None
+    era: Optional[str] = None
+    avatar_url: Optional[str] = None
+    tagline: Optional[str] = None
+    backstory: Optional[str] = None
+    secrets: Optional[list] = None
+
+    class Config:
+        from_attributes = True
+
+
 class RoomMessageOut(BaseModel):
     id: str
     sender_id: str
     sender_nickname: str
+    sender_character_name: Optional[str] = None
+    sender_avatar_url: Optional[str] = None
     content: str
     message_type: str
     created_at: datetime

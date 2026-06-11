@@ -54,6 +54,8 @@ class RoomMessage(Base):
     room_id = Column(GUID(), ForeignKey("rooms.id"), nullable=False)
     sender_id = Column(String(64), nullable=False)
     sender_nickname = Column(String(64), nullable=False)
+    sender_character_name = Column(String(64), nullable=True)
+    sender_avatar_url = Column(Text, nullable=True)
     content = Column(Text, nullable=False)
     message_type = Column(String(16), default="text")  # text, system, phase_change, clue_issued
     created_at = Column(DateTime, default=datetime.now)
